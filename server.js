@@ -4,12 +4,12 @@ const http = require("http");
 const path = require("path");
 const { Readable } = require("stream");
 const { pipeline } = require("stream/promises");
+const ROOT_DIR = __dirname;
 
-const { analyzeUrls } = require("./src/pinterest-service");
+const { analyzeUrls } = require(resolveModule("./src/pinterest-service", "./pinterest-service"));
 
 const HOST = process.env.HOST || "0.0.0.0";
 const PORT = Number(process.env.PORT) || 4173;
-const ROOT_DIR = __dirname;
 const RENDERER_DIR = path.join(ROOT_DIR, "renderer");
 const PUBLIC_DIR = path.join(ROOT_DIR, "public");
 const SERVER_HEADERS = {
@@ -162,6 +162,11 @@ async function handleStatic(pathname, method, response) {
 function resolveStaticPath(pathname) {
   const decoded = decodeURIComponent(pathname);
   if (decoded === "/") {
+    const rootIndex = path.join(ROOT_DIR, "index.html");
+    if (fs.existsSync(rootIndex)) {
+      return rootIndex;
+    }
+
     return path.join(RENDERER_DIR, "index.html");
   }
 
@@ -169,11 +174,16 @@ function resolveStaticPath(pathname) {
   const candidates = [
     path.join(PUBLIC_DIR, cleaned),
     path.join(RENDERER_DIR, cleaned),
+    path.join(ROOT_DIR, cleaned),
   ];
 
   for (const candidate of candidates) {
     const normalized = path.normalize(candidate);
-    if (!normalized.startsWith(path.normalize(PUBLIC_DIR)) && !normalized.startsWith(path.normalize(RENDERER_DIR))) {
+    if (
+      !normalized.startsWith(path.normalize(PUBLIC_DIR)) &&
+      !normalized.startsWith(path.normalize(RENDERER_DIR)) &&
+      !normalized.startsWith(path.normalize(ROOT_DIR))
+    ) {
       continue;
     }
 
@@ -209,4 +219,16 @@ function respondJson(response, statusCode, document) {
 function buildContentDisposition(filename) {
   const safe = filename.replace(/["\r\n]/g, "");
   return `attachment; filename="${safe}"; filename*=UTF-8''${encodeURIComponent(safe)}`;
+}
+
+function resolveModule(...candidates) {
+  for (const candidate of candidates) {
+    const normalized = candidate.replace(/^\.\//, "");
+    const candidatePath = path.join(ROOT_DIR, `${normalized}.js`);
+    if (fs.existsSync(candidatePath)) {
+      return candidate;
+    }
+  }
+
+  throw new Error(`Unable to resolve module from candidates: ${candidates.join(", ")}`);
 }
