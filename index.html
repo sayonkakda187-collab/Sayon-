@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pinterest Downloader</title>
+    <meta name="theme-color" content="#21342d" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Pin Downloader" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icons/icon-180.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page-glow page-glow-left"></div>
+    <div class="page-glow page-glow-right"></div>
+
+    <div class="app-shell">
+      <section class="install-panel panel">
+        <div class="install-copy">
+          <p class="section-step">App Install</p>
+          <h2>Install on Home Screen</h2>
+          <p id="install-message" class="field-note">Install this tool on your home screen for faster access.</p>
+          <div class="inline-meta">
+            <span id="install-status" class="status-pill pending">Not Installed</span>
+            <span id="device-label" class="badge">Desktop</span>
+          </div>
+        </div>
+        <div class="install-actions">
+          <button id="install-app-btn" class="primary-btn" type="button" hidden>Install App</button>
+          <p id="ios-install-hint" class="field-note hidden">To install on iPhone or iPad: tap Share, then tap Add to Home Screen.</p>
+          <p id="offline-notice" class="field-note hidden">Internet required to fetch Pinterest media. The app shell is cached for faster offline opening.</p>
+          <p id="secure-context-note" class="field-note hidden">Install prompts and service workers need HTTPS in production. Localhost works for development.</p>
+        </div>
+      </section>
+
+      <header class="hero panel">
+        <div class="hero-copy">
+          <p class="eyebrow">Installable PWA + Desktop Workflow</p>
+          <h1>Pinterest Photos &amp; Videos Downloader</h1>
+          <p class="lead">
+            Validate public Pinterest pins, preview every media asset, and launch the tool like an app from Android, iPhone/iPad home screen, or desktop.
+          </p>
+          <p class="note">Download public pins only. Private content and unavailable media are surfaced as item-level errors.</p>
+        </div>
+
+        <div class="hero-stats">
+          <article class="stat-card accent">
+            <span class="stat-label">Queue</span>
+            <strong id="queue-count">0</strong>
+            <span id="queue-detail" class="stat-detail">Nothing queued yet</span>
+          </article>
+          <article class="stat-card">
+            <span class="stat-label">Completed</span>
+            <strong id="completed-count">0</strong>
+            <span id="completed-detail" class="stat-detail">Saved items</span>
+          </article>
+          <article class="stat-card">
+            <span class="stat-label">Failed</span>
+            <strong id="failed-count">0</strong>
+            <span id="failed-detail" class="stat-detail">Needs retry</span>
+          </article>
+          <article class="stat-card">
+            <span class="stat-label">Speed</span>
+            <strong id="speed-count">0 B/s</strong>
+            <span id="remaining-count" class="stat-detail">0 remaining</span>
+          </article>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="panel source-panel">
+          <div class="panel-head">
+            <div>
+              <p class="section-step">1. Input Source</p>
+              <h2>Collect Pinterest URLs</h2>
+            </div>
+            <div class="mode-switch" role="tablist" aria-label="Input mode">
+              <button class="mode-btn active" data-mode="single" type="button">Single URL</button>
+              <button class="mode-btn" data-mode="multiple" type="button">Multiple URLs</button>
+              <button class="mode-btn" data-mode="extract" type="button">Extract URLs</button>
+            </div>
+          </div>
+
+          <div class="mode-pane active" data-pane="single">
+            <label class="field-label" for="single-url-input">Single Pinterest pin URL</label>
+            <input id="single-url-input" class="text-input" type="url" placeholder="https://www.pinterest.com/pin/123456789/" />
+            <p class="field-note">The tool validates the link and fetches media details for that one pin.</p>
+          </div>
+
+          <div class="mode-pane" data-pane="multiple">
+            <label class="field-label" for="multi-url-input">Multiple Pinterest URLs</label>
+            <textarea id="multi-url-input" class="text-area" placeholder="Paste one Pinterest pin URL per line"></textarea>
+            <p class="field-note">Duplicates are removed automatically before validation.</p>
+          </div>
+
+          <div class="mode-pane" data-pane="extract">
+            <div class="extract-grid">
+              <div>
+                <label class="field-label" for="extract-source-input">Paste text, page source, or imported content</label>
+                <textarea id="extract-source-input" class="text-area tall" placeholder="Paste raw text, page source, or a copied list of URLs"></textarea>
+                <div class="inline-actions">
+                  <button id="import-file-btn" class="ghost-btn" type="button">Import List/File</button>
+                  <span id="imported-file-label" class="muted">No file imported</span>
+                </div>
+              </div>
+
+              <div class="extract-results">
+                <div class="extract-head">
+                  <div>
+                    <span class="field-label">Extracted URLs</span>
+                    <p id="extract-count" class="field-note">0 URLs detected</p>
+                  </div>
+                  <div class="inline-actions compact">
+                    <button id="select-extracted-btn" class="ghost-btn" type="button">Select All</button>
+                    <button id="remove-extracted-btn" class="ghost-btn" type="button">Remove Unwanted</button>
+                  </div>
+                </div>
+                <div id="extracted-list" class="extract-list empty">
+                  <p>No extracted Pinterest URLs yet.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="toolbar">
+            <button id="find-url-btn" class="primary-btn" type="button">Find URL</button>
+            <button id="extract-url-btn" class="secondary-btn" type="button">Extract URL</button>
+            <button id="add-extracted-btn" class="secondary-btn" type="button">Add Selected URLs</button>
+            <button id="clear-input-btn" class="ghost-btn" type="button">Clear</button>
+          </div>
+
+          <div id="message-banner" class="message-banner hidden"></div>
+        </section>
+
+        <aside class="panel settings-panel">
+          <div class="panel-head">
+            <div>
+              <p class="section-step">2. Save Folder</p>
+              <h2>Choose where files go</h2>
+            </div>
+          </div>
+
+          <div class="folder-card">
+            <span class="field-label">Selected folder</span>
+            <div class="inline-meta">
+              <span id="save-mode-badge" class="status-pill downloading">Direct Folder Save</span>
+            </div>
+            <div id="folder-path" class="folder-path">Loading default folder...</div>
+            <div class="inline-actions">
+              <button id="select-folder-btn" class="primary-btn" type="button">Select Folder</button>
+              <button id="open-folder-btn" class="ghost-btn" type="button">Open Folder</button>
+            </div>
+            <p id="save-capability-note" class="field-note">If you do not choose a folder, files are saved to <code>Downloads/Pinterest_Downloader</code>.</p>
+          </div>
+
+          <div class="settings-group">
+            <h3>Optional subfolders</h3>
+            <label class="checkbox-row"><input id="subfolder-date" type="checkbox" /> Create subfolder by date</label>
+            <label class="checkbox-row"><input id="subfolder-board" type="checkbox" /> Create subfolder by board name</label>
+            <label class="checkbox-row"><input id="subfolder-media" type="checkbox" /> Create subfolder by media type</label>
+          </div>
+
+          <div class="settings-group">
+            <h3>File naming</h3>
+            <label class="checkbox-row"><input id="use-pin-title" type="checkbox" /> Use pin title in file name</label>
+            <label class="checkbox-row"><input id="add-date" type="checkbox" /> Add date to file name</label>
+            <label class="field-label" for="custom-prefix-input">Custom prefix</label>
+            <input id="custom-prefix-input" class="text-input" type="text" value="Pinterest" />
+          </div>
+
+          <div class="settings-group">
+            <h3>Download behavior</h3>
+            <label class="field-label" for="duplicate-policy">Duplicate handling</label>
+            <select id="duplicate-policy" class="select-input">
+              <option value="rename" selected>Rename automatically (Recommended)</option>
+              <option value="skip">Skip duplicate file</option>
+              <option value="overwrite">Overwrite existing file</option>
+            </select>
+
+            <label class="field-label" for="concurrency-select">Batch processing</label>
+            <select id="concurrency-select" class="select-input">
+              <option value="1">Sequential</option>
+              <option value="2" selected>Parallel x2</option>
+              <option value="3">Parallel x3</option>
+              <option value="4">Parallel x4</option>
+            </select>
+          </div>
+
+          <button id="start-download-btn" class="cta-btn" type="button">Start Batch Download</button>
+        </aside>
+
+        <section class="panel preview-panel">
+          <div class="panel-head">
+            <div>
+              <p class="section-step">3. Preview List</p>
+              <h2>Review queue</h2>
+            </div>
+            <div class="inline-actions compact">
+              <button id="select-all-btn" class="ghost-btn" type="button">Select All</button>
+              <button id="unselect-all-btn" class="ghost-btn" type="button">Unselect All</button>
+              <button id="remove-selected-btn" class="ghost-btn" type="button">Remove Selected</button>
+              <button id="retry-failed-btn" class="ghost-btn" type="button">Retry Failed</button>
+            </div>
+          </div>
+
+          <div class="progress-strip">
+            <div class="progress-head">
+              <span id="progress-label">Batch idle</span>
+              <span id="progress-detail">0 of 0 items processed</span>
+            </div>
+            <div class="progress-bar">
+              <span id="progress-fill"></span>
+            </div>
+          </div>
+
+          <div class="table-frame">
+            <table>
+              <thead>
+                <tr>
+                  <th>Select</th>
+                  <th>Preview</th>
+                  <th>Pin Title</th>
+                  <th>Media Type</th>
+                  <th>Source URL</th>
+                  <th>File Size</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="preview-body">
+                <tr class="empty-row">
+                  <td colspan="8">No Pinterest items queued yet.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel completion-panel">
+          <div class="panel-head">
+            <div>
+              <p class="section-step">4. Download Complete</p>
+              <h2>Summary &amp; follow-up actions</h2>
+            </div>
+          </div>
+
+          <div id="completion-grid" class="completion-grid">
+            <article class="completion-card">
+              <span>Total URLs</span>
+              <strong id="summary-total">0</strong>
+            </article>
+            <article class="completion-card">
+              <span>Downloaded</span>
+              <strong id="summary-downloaded">0</strong>
+            </article>
+            <article class="completion-card">
+              <span>Failed</span>
+              <strong id="summary-failed">0</strong>
+            </article>
+            <article class="completion-card">
+              <span>Skipped duplicates</span>
+              <strong id="summary-skipped">0</strong>
+            </article>
+          </div>
+
+          <div class="toolbar">
+            <button id="completion-open-folder-btn" class="secondary-btn" type="button">Open Folder</button>
+            <button id="completion-retry-btn" class="secondary-btn" type="button">Retry Failed</button>
+            <button id="export-log-btn" class="primary-btn" type="button">Export Download Log</button>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="./browser-api.js"></script>
+    <script src="./pwa-manager.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
