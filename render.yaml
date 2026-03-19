@@ -1,12 +1,16 @@
 services:
   - type: web
-    name: pinterest-downloader-tool
+    name: downloader-hub-pwa
     runtime: node
     plan: free
+    autoDeploy: true
+    healthCheckPath: /api/health
     buildCommand: npm install
     startCommand: npm run start:web
     envVars:
       - key: NODE_VERSION
         value: 22.22.0
+      - key: NODE_ENV
+        value: production
       - key: HOST
         value: 0.0.0.0
